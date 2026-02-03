@@ -1,39 +1,30 @@
-# Multi-Source RAG Chatbot using LangGraph & AstraDB
+# Multi-Source RAG Chatbot (LangGraph + AstraDB + Docker)
 
 ## Problem Statement
+Traditional chatbots often suffer from one of the following limitations:
+- They rely only on static internal documents, limiting knowledge scope.
+- They depend entirely on external sources, reducing control and reliability.
 
-Traditional chatbots usually fall into one of two categories:
-
-- They rely only on static internal documents, which limits their knowledge scope.
-- They depend entirely on external sources, which removes domain control and reliability.
-
-This project addresses these limitations by building a **multi-source Retrieval-Augmented Generation (RAG) system** that can intelligently decide:
-
-- when to use **internal knowledge** stored in a vector database (AstraDB)
+This project solves the problem by building a **multi-source Retrieval-Augmented Generation (RAG) system** that can intelligently decide:
+- when to use **internal domain knowledge** stored in AstraDB (Vector DB)
 - when to fall back to **external public knowledge** (Wikipedia)
 
-All routing and execution logic is orchestrated using **LangGraph** to enable explicit, production-style workflow control.
+The entire workflow is explicitly orchestrated using **LangGraph**, making the system production-oriented and controllable.
 
 ---
 
 ## Project Overview
+This is a **production-ready GenAI RAG application**, refactored from an experimental notebook into a **Python service and Dockerized** for reproducible execution.
 
-This project implements a **LangGraph-based RAG chatbot** that performs the following steps:
-
+The system performs the following steps:
 1. Accepts a user query
 2. Routes the query to the appropriate data source
-3. Retrieves relevant contextual information
+3. Retrieves relevant context
 4. Generates a grounded response using an LLM
-
-The system is designed to handle real-world scenarios such as:
-
-- multiple retrieval sources
-- heterogeneous response formats
-- LLM compatibility constraints
 
 ---
 
-## High-Level Architecture (Flow Graph)
+## High-Level Architecture (LangGraph Flow)
 
                     ┌──────────────┐
                     │   User Query │
@@ -67,83 +58,85 @@ The system is designed to handle real-world scenarios such as:
 ## Key Components
 
 ### 1. LLM-Based Router (LangGraph)
-
 - Uses an LLM to classify incoming queries
 - Routes queries to:
-  - AstraDB vector store for domain-specific content
+  - AstraDB vector store for domain-specific queries
   - Wikipedia for general knowledge
-- Implemented using **strict JSON-based routing** to avoid tool-calling dependencies
-
-LangGraph conditional edges are used to control execution flow based on the router’s output.
+- Implemented using strict JSON-based routing
+- LangGraph conditional edges control execution flow
 
 ---
 
 ### 2. AstraDB Vector Store (Internal Knowledge)
-
-- Source documents are:
-  - loaded from web sources
-  - split into chunks using recursive text splitting
+- Documents are:
+  - chunked using recursive text splitting
   - embedded using HuggingFace MiniLM embeddings
-- Embeddings are stored in **AstraDB (Cassandra Vector Search)**
-
-This source is used for controlled, domain-specific retrieval.
+- Stored in AstraDB (Cassandra Vector Search)
+- Used for controlled, domain-specific retrieval
 
 ---
 
 ### 3. Wikipedia Tool (External Knowledge)
-
-- Acts as a fallback for general or public knowledge queries
+- Acts as a fallback knowledge source
 - Implemented as a separate LangGraph node
-- Enables hybrid retrieval across internal and external sources
+- Enables hybrid retrieval across internal and external data sources
 
 ---
 
 ### 4. Generation Node (RAG Completion)
-
-- Retrieved documents are normalized into a unified format
-- Context is constructed from retrieved content
-- An LLM generates the final response grounded in retrieved data
-
-This ensures the system functions as a complete RAG pipeline rather than a retrieval-only demo.
+- Retrieved outputs are normalized into a unified format
+- Context is constructed from retrieved documents
+- LLM generates a grounded response
+- Ensures this is a full RAG pipeline, not a retrieval-only demo
 
 ---
 
 ### 5. Production Edge-Case Handling
-
-The system handles different retrieval output formats, including:
-
-- `(Document, score)` tuples from vector databases
-- `Document` objects
-- raw text responses from external tools
-
-All outputs are normalized before being passed to the generation stage to avoid runtime failures.
+- Handles heterogeneous retrieval outputs:
+  - `(Document, score)` tuples from vector databases
+  - `Document` objects
+  - raw text responses from external tools
+- Normalization avoids runtime failures in generation stage
 
 ---
 
 ## Tech Stack
-
-- **LangGraph** – Workflow orchestration and conditional routing
-- **LangChain** – RAG abstractions and utilities
-- **AstraDB (Cassandra Vector DB)** – Vector storage and semantic retrieval
-- **Groq LLM** – LLM inference for routing and generation
-- **HuggingFace Embeddings** – Text embedding generation
-- **Wikipedia API** – External knowledge source
-- **Python** – Core implementation language
-
----
-
-## Possible Extensions
-
-- Add citation tracking for generated answers
-- Introduce retry and fallback logic in LangGraph
-- Stream token-level responses
-- Integrate additional tools (Arxiv, SQL, external APIs)
+- Python
+- LangGraph (workflow orchestration)
+- LangChain (RAG utilities)
+- Groq LLM (routing + generation)
+- AstraDB (Cassandra Vector DB)
+- HuggingFace Embeddings
+- Wikipedia API
+- Docker
 
 ---
 
-## Project Status
+## Running the Project (Docker)
 
+### Build Docker Image
+
+- docker build -t multisource-rag .
 - End-to-end RAG pipeline implemented
 - Multi-source retrieval supported
+
+### Run Container
+docker run --env-file .env multisource-rag
+
+
+The application is CLI-based, so the container executes and exits after producing the response.
 - Explicit workflow control using LangGraph
 - Designed with production edge cases in mind
+
+Project Status
+
+End-to-end RAG pipeline implemented
+
+Multi-source retrieval supported
+
+Explicit workflow control using LangGraph
+
+Dockerized for reproducible execution
+
+Designed with production edge cases in mind
+
